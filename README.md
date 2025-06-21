@@ -1,6 +1,6 @@
 # Data Visualization and Reproducible Research
 
-> Gervonté Fowler. 
+> Gervonté Fowler 
 
 
 The following is a sample of products created during the _"Data Visualization and Reproducible Research"_ course.
@@ -19,20 +19,17 @@ Find the code and report in the `project_01/` folder.
 In this project, I explored trends in Netflix shows using a dataset of 1,000 entries containing user rating scores, release years, and rating systems. The goal was to uncover patterns in viewer sentiment, analyze how scores evolved over time, and examine regional influences using mapped rating data. The analysis combines interactive visualizations and a linear regression model to assess temporal and geographic trends in content reception. Find the code and report in the `project_02/` folder.
 
 **Sample data visualization:** 
-
 <img src="figures/fowler_project_2.png" width="70%" height="70%">
 
 
 ## Project 03
 
-In this project, I explored ... _[short description of the data visualizations you for this part of the project produced goes here]_
+In this project, I explored two distinct datasets. In Part 1, I analyzed 2022 weather data from Tampa International Airport, creating visualizations such as histograms, density plots with different kernels, faceted monthly density plots, ridgeline plots with quantiles, and precipitation distributions to reveal seasonal patterns and climate variability. In Part 2, I conducted text analysis on Billboard’s Top 100 song lyrics from 2015, using word frequency plots, a word cloud, bigram analysis, sentiment scoring with the AFINN lexicon, and a word network graph to uncover common themes and emotional tones in popular music.
 
 **Sample data visualization:** 
-
-_[include your favorite visualization from this project here]_
-<img src="https://raw.githubusercontent.com/aalhamadani/dataviz_final_project/main/figures/concrete_density.png" width="80%" height="80%">
+<img src="figures/fowler_project_3.png" width="80%" height="80%">
 
 
 ### Moving Forward
 
-_Please add here a short reflection on what you learned and what you plan to continue exploring in terms of data visualization, data storytelling, reproducible research, and/or related topics._
+Through the completion of these projects, I gained a deeper understanding of how to transform raw data into meaningful visual narratives. I learned how different types of visualizations—such as density plots, ridgeline charts, sentiment histograms, and network graphs—can reveal patterns, context, and emotion in both numerical and textual data. I also improved my ability to write reproducible R Markdown documents, which is essential for clear and transparent data communication. Moving forward, I plan to explore more advanced storytelling techniques using interactive dashboards and animations, and to deepen my understanding of how to apply design principles and statistical thinking to make visual insights more impactful.

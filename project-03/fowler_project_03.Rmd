@@ -477,46 +477,39 @@ if(exists("lyrics_data") && nrow(lyrics_data) > 0 && exists("lyrics_words")) {
 }
 ```
 
-### Word Network Visualization
+### Word Cloud Visualization
 
-```{r network, fig.width=12, fig.height=10}
-# Check if lyrics data exists before processing
-if(exists("lyrics_data") && nrow(lyrics_data) > 0) {
+> The word cloud visualization reveals the most prominent terms in Billboard Top 100 lyrics. Larger words like 'love', 'know', and 'like' dominate the visual space, indicating these are the most frequently used words, while smaller terms show the diverse vocabulary range in popular music.
+
+
+```{r wordcloud_alternative, fig.width=10, fig.height=8}
+# If wordcloud package is available, create a word cloud
+if(exists("lyrics_words") && requireNamespace("wordcloud", quietly = TRUE)) {
   
-  tryCatch({
-    # Create word pairs for network analysis
-    word_pairs <- lyrics_data %>%
-      unnest_tokens(word, Lyrics) %>%
-      anti_join(stop_words, by = "word") %>%
-      filter(!str_detect(word, "\\d"),
-             str_length(word) > 2) %>%
-      pairwise_count(word, Song, sort = TRUE) %>%
-      filter(n >= 8)  # Only include pairs that appear together frequently
-    
-    # Create network graph
-    word_graph <- word_pairs %>%
-      filter(n >= 10) %>%
-      graph_from_data_frame()
-    
-    # Plot network
-    set.seed(123)
-    ggraph(word_graph, layout = "fr") +
-      geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, 
-                     arrow = arrow(type = "closed", length = unit(0.1, "inches"))) +
-      geom_node_point(color = "darkblue", size = 3) +
-      geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
-      labs(title = "Word Association Network in Billboard Top 100 Lyrics (2015)",
-           subtitle = "Words that frequently appear together in the same songs") +
-      theme_void() +
-      theme(plot.title = element_text(hjust = 0.5, size = 14),
-            plot.subtitle = element_text(hjust = 0.5, size = 12))
-            
-  }, error = function(e) {
-    cat("Error in network analysis:", e$message, "\n")
-  })
+  library(wordcloud)
+  library(RColorBrewer)
+  
+  word_freq <- lyrics_words %>%
+    count(word, sort = TRUE) %>%
+    filter(n >= 5)  # Only words appearing 5+ times
+  
+  # Create word cloud
+  set.seed(123)
+  par(bg = "white")
+  wordcloud(words = word_freq$word, 
+            freq = word_freq$n,
+            min.freq = 5,
+            max.words = 100,
+            random.order = FALSE,
+            rot.per = 0.35,
+            colors = brewer.pal(8, "Dark2"),
+            scale = c(4, 0.5))
+  
+  title("Word Cloud: Billboard Top 100 Lyrics (2015)", 
+        cex.main = 1.5, font.main = 2)
   
 } else {
-  cat("Lyrics data not available for network analysis\n")
+  cat("Wordcloud visualization not available\n")
 }
 ```
 
@@ -531,6 +524,6 @@ if(exists("lyrics_data") && nrow(lyrics_data) > 0) {
 - Most common words in Billboard lyrics include "love", "know", "like", "time" - typical themes in popular music
 - Bigram analysis reveals common phrases like "don't know", "wanna be", "feel like"
 - Sentiment analysis shows most songs have slightly positive sentiment scores
-- Word network visualization demonstrates how certain words cluster together in lyrics
+- Word cloud visualization demonstrates how certain words appear more commonly in lyrics
 
 The visualizations effectively demonstrate different approaches to exploring both continuous (weather) and categorical/text data, using appropriate geometric objects and aesthetic mappings for each data type.
