@@ -1,0 +1,280 @@
+---
+title: "Mini-Project 02"
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float: true
+---
+
+# Data Visualization Project 02
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+library(tidyverse)
+library(plotly)
+library(ggplot2)
+library(sf)
+library(tmap)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(janitor)
+library(broom)
+```
+
+## Motivation and Objective
+
+The objective of this analysis is to uncover patterns in Netflix content through statistical and visual methods. Specifically, the project investigates how user ratings have changed over time and whether rating systems reflect regional or cultural content patterns.
+
+The motivation for including a linear regression model was to examine whether there is a measurable trend between a show's release year and its user rating. A linear model was selected for its interpretability and suitability for identifying temporal trends in numeric variables. This complements the visualizations by grounding observed patterns in statistical evidence.
+
+## 1. Load Data
+
+```{r load-data}
+netflix <- read_csv("../data/netflixShows.csv", locale = locale(encoding = "latin1")) %>%
+  janitor::clean_names()
+```
+
+## 2. Clean Data
+
+```{r clean-data}
+netflix_clean <- netflix %>%
+  filter(!is.na(user_rating_score)) %>%
+  mutate(rating = as.factor(rating),
+         release_year = as.integer(release_year))
+```
+
+## 2b. Map Rating Systems to Countries
+```{r map-data}
+rating_country_map <- c(
+  "TV-MA" = "United States", "TV-14" = "United States", "TV-PG" = "United States", "TV-G" = "United States",
+  "PG-13" = "United States", "R" = "United States", "NR" = "United States",
+  "14+" = "Canada", "G" = "United States", "PG" = "United States",
+  "16+" = "Germany", "18+" = "Germany", "NC-17" = "United States",
+  "MA15+" = "Australia", "R18+" = "Australia",
+  "U" = "United Kingdom", "12A" = "United Kingdom",
+  "-10" = "France", "-12" = "France"
+)
+
+netflix_with_country <- netflix_clean %>%
+  mutate(country = rating_country_map[rating]) %>%
+  filter(!is.na(country))
+```
+
+## 3. Summary Statistics
+
+```{r summary-stats}
+summary_table <- netflix_clean %>%
+  group_by(rating) %>%
+  summarize(
+    avg_user_score = mean(user_rating_score, na.rm = TRUE),
+    median_year = median(release_year),
+    count = n()
+  ) %>% arrange(desc(avg_user_score))
+
+knitr::kable(summary_table)
+```
+
+## Analytical Approach
+
+Three types of analysis were used in this project:
+- **Temporal Analysis**: Interactive plots show how average user ratings change over time.
+- **Spatial Mapping**: TV content rating systems were mapped to approximate countries for geographic comparison.
+- **Statistical Modeling**: A simple linear regression was used to assess the relationship between release year and user rating score.
+
+## 4. Interactive Visualization: Score Over Time
+
+```{r interactive-plot}
+score_trend <- netflix_clean %>%
+  group_by(release_year) %>%
+  summarize(avg_score = mean(user_rating_score))
+
+plot_ly(score_trend, x = ~release_year, y = ~avg_score, type = 'scatter', mode = 'lines+markers') %>%
+  layout(title = 'Average User Rating Score Over Time', xaxis = list(title = 'Year'), yaxis = list(title = 'Average Score'))
+```
+## 5. Spatial Summary
+```{r spatial-summary}
+country_summary <- netflix_with_country %>%
+  group_by(country) %>%
+  summarize(
+    avg_user_score = mean(user_rating_score, na.rm = TRUE),
+    count = n()
+  )
+```
+
+## 6. Spatial Visualization: Region from Ratings
+
+```{r spatial-plot}
+# Check if data exists and has the required columns
+if(exists("netflix_clean") && nrow(netflix_clean) > 0) {
+  
+  # Map ratings to regions - Simplified approach
+  region_map <- data.frame(
+    rating = c("TV-MA", "TV-14", "TV-PG", "TV-G", "TV-Y", 
+               "PG", "PG-13", "R", "NC-17", "G",
+               "13+", "16+", "18+", "All", 
+               "U", "UA", 
+               "NR", "Unrated"),
+    region = c("United States", "United States", "United States", "United States", "United States",
+               "North America", "North America", "North America", "North America", "North America",
+               "International", "International", "International", "International",
+               "India", "India",
+               "Unknown", "Unknown"),
+    stringsAsFactors = FALSE
+  )
+  
+  # Get region counts
+  region_counts <- netflix_clean %>%
+    left_join(region_map, by = "rating") %>%
+    filter(!is.na(region)) %>%
+    count(region, name = "n")
+  
+  # Create a simple bar plot instead of map if map data unavailable
+  if(require(rnaturalearth, quietly = TRUE)) {
+    # Try to create map if packages available
+    tryCatch({
+      # Match to sample countries
+      region_country_map <- data.frame(
+        region = c("United States", "North America", "International", "India"),
+        name = c("United States of America", "Canada", "Germany", "India"),
+        stringsAsFactors = FALSE
+      )
+      
+      world <- ne_countries(scale = "medium", returnclass = "sf")
+      
+      map_data <- region_counts %>%
+        inner_join(region_country_map, by = "region") %>%
+        right_join(world, by = "name")
+      
+      # Plot map
+      print(ggplot(map_data) +
+        geom_sf(aes(fill = n)) +
+        scale_fill_viridis_c(option = "magma", na.value = "gray90") +
+        theme_minimal() +
+        labs(title = "Estimated Netflix Content Coverage by Region (Based on Rating)",
+             fill = "Number of Titles"))
+      
+    }, error = function(e) {
+      # Fallback to bar plot if map fails
+      print(ggplot(region_counts, aes(x = reorder(region, n), y = n)) +
+        geom_col(fill = "steelblue") +
+        coord_flip() +
+        labs(title = "Netflix Content by Region (Based on Rating)",
+             x = "Region", y = "Number of Titles") +
+        theme_minimal())
+    })
+    
+  } else {
+    # Simple bar plot if mapping packages not available
+    ggplot(region_counts, aes(x = reorder(region, n), y = n)) +
+      geom_col(fill = "steelblue") +
+      coord_flip() +
+      labs(title = "Netflix Content by Region (Based on Rating)",
+           x = "Region", y = "Number of Titles") +
+      theme_minimal()
+  }
+  
+} else {
+  cat("Netflix data not available for spatial visualization")
+}
+```
+
+## 7. Spatial Visualization: Ratings by Country
+```{r spatial-vis}
+# Correct country name mapping
+country_name_map <- c(
+  "United States" = "United States of America",
+  "United Kingdom" = "United Kingdom",
+  "Germany" = "Germany",
+  "France" = "France",
+  "Canada" = "Canada",
+  "Australia" = "Australia",
+  "India" = "India"
+)
+
+country_summary_mapped <- netflix_with_country %>%
+  mutate(country_map = country_name_map[country]) %>%
+  group_by(country_map) %>%
+  summarize(
+    avg_user_score = mean(user_rating_score, na.rm = TRUE),
+    count = n()
+  )
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+world_joined <- left_join(world, country_summary_mapped, by = c("name" = "country_map"))
+
+# Enable interactivity
+tmap_mode("view")
+
+tm_shape(world_joined) +
+  tm_polygons("avg_user_score",
+              title = "Avg User Score",
+              palette = "YlOrRd",
+              textNA = "No Data",
+              style = "quantile",
+              id = "name",  # shows country name on hover
+              popup.vars = c("Avg Score" = "avg_user_score", "Show Count" = "count")) +
+  tm_layout(title = "Avg Netflix User Score by Country (Interactive Map)")
+```
+
+## 8. Annotated Plot
+
+```{r annotation-plot}
+# Check if data exists
+if(exists("score_trend") && nrow(score_trend) > 0) {
+  
+  top_years <- score_trend %>% 
+    filter(avg_score > quantile(avg_score, 0.9, na.rm = TRUE))
+  
+  ggplot(score_trend, aes(x = release_year, y = avg_score)) +
+    geom_line() +
+    geom_point(data = top_years, aes(x = release_year, y = avg_score), color = 'red', size = 2) +
+    geom_text(data = top_years, aes(label = round(avg_score, 1)), vjust = -1, size = 3) +
+    labs(title = "Annotated High Score Years", x = "Year", y = "Avg User Score") +
+    theme_minimal()
+    
+} else {
+  cat("Score trend data not available for annotation plot")
+}
+```
+## 9. Model-Based Visualization
+
+```{r model-plot}
+# Fit a linear model: does release year predict user score?
+model <- lm(user_rating_score ~ release_year, data = netflix_clean)
+
+# Plot the regression line over actual data
+ggplot(netflix_clean, aes(x = release_year, y = user_rating_score)) +
+  geom_point(alpha = 0.4, color = "steelblue") +
+  geom_smooth(method = "lm", color = "firebrick", se = TRUE) +
+  labs(title = "Linear Regression: User Rating Score Over Time",
+       x = "Release Year",
+       y = "User Score") +
+  theme_minimal()
+```
+
+## Linear Regression: Release Year vs User Rating
+
+The linear regression suggests a weak positive correlation between a show's release year and its average user rating. This may reflect improved content quality, evolving viewer standards, or Netflix's evolving recommendation and production strategies.
+
+While the correlation is not strong, the upward trend supports the hypothesis that recent content tends to receive slightly higher ratings.
+
+## 9b. Model Coefficients
+
+```{r model-summary}
+broom::tidy(model)
+```
+
+## 10. Discussion
+
+- Data was cleaned for missing scores.
+- Ratings were grouped and aggregated for trends.
+- Interactive visuals show score changes over time.
+- A spatial map based on rating regions enables global insights without needing location columns.
+- Modeling and annotations highlight story-worthy data points.
+
+```{r save-html, eval=FALSE}
+rmarkdown::render("../report/aal_analysis_data_viz.Rmd", output_file = "../report/aal_analysis_data_viz.html")
+```
