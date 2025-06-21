@@ -1,0 +1,108 @@
+---
+title: "Evolution of Billboard Summer Hits"
+author: "Gervonté Fowler"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+```
+
+## Introduction
+
+In this project, I explored the musical characteristics of **Billboard summer hits** from 1958 to the present. I was particularly interested in how features like *danceability*, *energy*, and *musical key* have changed over time.
+
+### Variable Definitions
+- **Danceability**: How suitable a track is for dancing based on tempo, rhythm stability, beat strength, etc.
+- **Energy**: A perceptual measure of intensity and activity.
+- **Valence**: A measure of musical positiveness.
+- **Key Mode**: The pitch class and modality (major or minor) in which a song is composed.
+
+
+In this project, I explored the musical characteristics of Billboard summer hits from 1958 to the present. I was particularly interested in how features like danceability, energy, and musical key have changed over time.
+
+## Load and Inspect Data
+
+```{r load-data}
+data <- read_csv("../data/all_billboard_summer_hits.csv")
+
+# Check structure
+glimpse(data)
+
+# Check for missing values
+colSums(is.na(data))
+
+# Summary of numerical features
+summary(select(data, danceability, energy, valence, tempo, year))
+```
+
+From the output above, I looked for missing values or extreme outliers. Most features appear to be well-structured with limited missing data.
+
+## Data Cleaning and Transformation
+
+```{r cleaning}
+# Convert year to integer and remove NA years
+data <- data %>%
+  mutate(year = as.integer(year)) %>%
+  filter(!is.na(year))
+
+```
+
+Here I converted the year into a usable numeric format, removed missing year values.
+
+## Danceability Over Time
+
+```{r danceability}
+danceability_summary <- data %>%
+  group_by(year) %>%
+  summarize(avg_danceability = mean(danceability, na.rm = TRUE))
+
+ggplot(danceability_summary, aes(x = year, y = avg_danceability)) +  
+  geom_line(color = "steelblue", size = 1) +
+  labs(title = "Average Danceability of Summer Hits Over Time",
+       x = "Year", y = NULL) +  
+  theme_minimal() +
+  annotate("text", x = 2010, y = 0.75, label = "Rise of EDM & Pop", hjust = 0, size = 2.5)
+```
+
+This chart helped me observe that summer hits have generally become more danceable over the decades, especially since the 2000s. Danceability is a key audio feature when evaluating the physical and social appeal of popular music, particularly in seasonal contexts like summer. 
+
+## Most Common Keys in Summer Hits
+
+```{r key-distribution}
+key_counts <- data %>%
+  count(key_mode, sort = TRUE) %>%
+  top_n(5)
+
+ggplot(key_counts, aes(x = reorder(key_mode, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "tomato") +
+  coord_flip() +
+  labs(title = "Top 5 Most Common Musical Keys",
+       x = NULL, y = "Number of Songs") +
+  theme_minimal() 
+  
+```
+
+I used this bar chart to see which musical keys were most common. I found that major keys especially C major and G major dominate the landscape of summer hits. This analysis was motivated by the idea that musical key contributes to the overall mood and emotional accessibility of a song. Major keys are often associated with happiness, brightness, and optimism qualities that align with the energetic and feel good nature of summer anthems. 
+
+## Valence vs Energy
+
+```{r valence-energy}
+ggplot(data, aes(x = valence, y = energy)) +
+  geom_point(alpha = 0.6, color = "darkgreen") +
+  labs(title = "Valence vs Energy in Billboard Summer Hits",
+       x = "Valence (positivity)", y = NULL) +
+  theme_minimal() 
+```
+
+As we mentioned earlier Valence is a measure of the musical positivity conveyed by a track, ranging from 0.0 (sad, negative) to 1.0 (happy, euphoric). High valence songs tend to sound cheerful and emotionally uplifting, while low valence songs are more somber or tense. When paired with energy a measure of intensity and activity we can better understand the emotional tone and dynamism of each track.
+
+This scatterplot allowed me to examine the emotional tone of songs. I noticed that many summer hits are both high energy and high valence fitting the fun, upbeat nature of summer music.
+
+## Conclusion
+
+### Analytical Reflection
+This analysis suggests a trend toward increasingly high-energy, emotionally positive music in summer hits, potentially reflecting broader cultural shifts. The dominance of major keys and higher danceability scores post 2000 hints at a preference for more accessible, upbeat music during the summer season.
+
+Through this project, I was able to uncover how the "sound" of summer has evolved. I found that recent summer hits are more rhythmically engaging, often use major keys, and tend to be energetic and joyful. These characteristics help explain why these songs continue to resonate with audiences year after year.

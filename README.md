@@ -1,6 +1,6 @@
 # Data Visualization and Reproducible Research
 
-> Gervonte Fowler. 
+> Gervonté Fowler. 
 
 
 The following is a sample of products created during the _"Data Visualization and Reproducible Research"_ course.
@@ -8,12 +8,10 @@ The following is a sample of products created during the _"Data Visualization an
 
 ## Project 01
 
-In the `project_01/` folder you can find... _[add short description of your revised project here]_
+In the `project_01/` folder you can find an exploration of the evolution of musical characteristics in Billboard summer hits from 1958 to the present. Using data visualization techniques in R, the analysis focuses on key audio features such as danceability, energy, valence, and musical key. The goal is to uncover long-term trends in the emotional tone and rhythmic structure of popular summer music, providing insights into how mainstream music has shifted in response to cultural, technological, and industry changes.
 
 **Sample data visualization:** 
-
-_[include your favorite visualization from this project here]_
-<img src="https://raw.githubusercontent.com/aalhamadani/dataviz_final_project/main/figures/echarts.png" width="70%" height="70%">
+<img src="figures/fowler_project_1.png" width="70%" height="70%">
 
 
 ## Project 02
